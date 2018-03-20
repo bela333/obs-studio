@@ -2,6 +2,7 @@
 #include <obs-source.h>
 #include <obs.h>
 #include <util/platform.h>
+#define PI 3.14159265
 
 struct equirotate_data {
 	obs_source_t                   *context;
@@ -27,9 +28,9 @@ static void equirotate_update(void *data, obs_data_t *settings)
 	double y = obs_data_get_double(settings, "y");
 	double z = obs_data_get_double(settings, "z");
 
-	filter->x = (float)x;
-	filter->y = (float)y;
-	filter->z = (float)z;
+	filter->x = (float)x/180*PI;
+	filter->y = (float)y/180*PI;
+	filter->z = (float)z/180*PI;
 }
 
 static void equirotate_destroy(void *data)
@@ -107,9 +108,9 @@ static obs_properties_t *equirotate_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
 
-	obs_properties_add_float_slider(props, "x","X Position", -100.0f, 100.0f, 0.01f);
-	obs_properties_add_float_slider(props, "y","Y Position", -100.0f, 100.0f, 0.01f);
-	obs_properties_add_float_slider(props, "z","Z Position", -100.0f, 100.0f, 0.01f);
+	obs_properties_add_float_slider(props, "x","X Position", -180.0f, 180.0f, 0.01f);
+	obs_properties_add_float_slider(props, "y","Y Position", -180.0f, 180.0f, 0.01f);
+	obs_properties_add_float_slider(props, "z","Z Position", -180.0f, 180.0f, 0.01f);
 
 	UNUSED_PARAMETER(data);
 	return props;
