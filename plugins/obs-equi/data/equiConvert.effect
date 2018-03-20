@@ -1,0 +1,96 @@
+// Based on libretro shader https://github.com/libretro/common-shaders/blob/master/test/lab/misc/sharpness.cg
+// Converted to obs effect file by Nibbles
+// Edited by bela333
+
+
+
+uniform float4x4 ViewProj;
+uniform texture2d image;
+
+uniform texture2d target;
+uniform float4 color = {1.0, 1.0, 1.0, 1.0};
+
+uniform float width;
+uniform float height;
+
+uniform float x;
+uniform float y;
+
+uniform float texture_width;
+uniform float texture_height;
+
+#define PI 3.14159265f
+
+sampler_state def_sampler {
+	Filter   = Linear;
+	AddressU = Wrap;
+	AddressV = Wrap;
+};
+
+struct VertInOut {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+struct VertOut {
+	float4 pos : POSITION;
+	float4 col : COLOR;
+	float2 uv  : TEXCOORD0;
+};
+
+VertOut VSDefault(VertInOut vert_in)
+{
+	VertOut vert_out;
+	vert_out.pos = mul(float4(vert_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = vert_in.uv;
+	vert_out.col = color;
+	return vert_out;
+}
+
+float4 PSDrawBare(VertOut vert_in) : TARGET
+{
+	float2 uv = vert_in.uv;
+	float4 E = float4(1, 1, 1, 0);
+	bool alpha;
+
+	float yaw = (uv.x*2.0-1.0)*PI;
+	float pitch = (uv.y*2.0-1.0)*PI/2.0;
+
+	float len = cos(pitch);
+	float3 point;
+
+	point.x = cos(yaw)*len;
+	point.y = sin(yaw)*len;
+	point.z = sin(pitch);
+
+	// Extend vector
+	point = point / abs(point.x);
+
+	// Add position Transform
+	point.yz += float2(x, y);
+	
+	// Resize image
+	point.yz /= float2(width, height);
+
+	// Convert from -0.5 - 0.5 to 0 - 1
+	point.yz += float2(1);
+	point.yz /= 2;
+
+
+	// Should render?
+	alpha = point.y > 0 && point.y < 1 && point.z > 0 && point.z < 1;
+	alpha = alpha && abs(yaw) < PI/2;
+
+	E = image.Sample(def_sampler, point.yz);
+	E.w = float(alpha)*E.w;
+	return E;
+}
+
+technique Draw
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawBare(vert_in);
+	}
+}
